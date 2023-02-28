@@ -1,6 +1,9 @@
 #pragma once
 
+#include <concepts>
 #include <optional>
+#include <memory>
+#include <type_traits>
 
 template <class From, auto target>
 struct Mapping {
@@ -18,5 +21,10 @@ struct PolymorphicMapper {
 template<class Base, class Target, Target tg, class CastTo, class... Mappings> 
 struct PolymorphicMapper<Base, Target, Mapping<CastTo, tg>, Mappings...> {
   static std::optional<Target> map(const Base& object) {
+    if (dynamic_cast<const CastTo*>(object) != nullptr) {
+      return std::nullopt;
+    } else {
+      return PolymorphicMapper<Base, Target, Mappings...>::map(object);
+    }
   }
 };
