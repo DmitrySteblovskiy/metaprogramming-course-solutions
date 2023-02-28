@@ -18,13 +18,13 @@ struct PolymorphicMapper {
   }
 };
 
-template<class Base, class Target, Target tg, class CastTo, class... Mappings> 
-struct PolymorphicMapper<Base, Target, Mapping<CastTo, tg>, Mappings...> {
+template<class Base, class Target, Target targ, class Caster, class... Mappings>
+requires std::is_base_of_v<Base, Caster>
+struct PolymorphicMapper<Base, Target, Mapping<Caster, targ>, Mappings...> {
   static std::optional<Target> map(const Base& object) {
-    if (dynamic_cast<const CastTo*>(object) != nullptr) {
-      return std::nullopt;
-    } else {
-      return PolymorphicMapper<Base, Target, Mappings...>::map(object);
+    auto objCastResult = dynamic_cast<const Caster*>(&object);
+    if (objCastResult != nullptr) {
+      return std::make_optional(targ);
     }
   }
 };
