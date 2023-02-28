@@ -26,5 +26,6 @@ struct PolymorphicMapper<Base, Target, Mapping<Caster, targ>, Mappings...> {
     if (objCastResult != nullptr) {
       return std::make_optional(targ);
     }
+    return PolymorphicMapper<Base, Target, Mappings...>::map(object);
   }
 };
