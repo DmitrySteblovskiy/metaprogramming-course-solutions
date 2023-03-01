@@ -69,6 +69,7 @@ struct CycleDef<TTuple<T, Ts...>> { // t_t
 
 template <TypeList TL> using Cycle = CycleDef<ToTuple<TL>>; // to
 
+namespace makers {
 template <class TL, class TT> struct ToTupleMake;
 
 template <TypeList TL, class... Ts>
@@ -83,8 +84,30 @@ struct ToTupleMake<TL, type_tuples::TTuple<Ts...>> {
   using Type = type_tuples::TTuple<Ts...>;
 };
 
+template <template <class, class> class OP, class T, TypeList TL>
+struct ScanlMaker
+    : public Cons<OP<T, typename TL::Head>,
+                  ScanlMaker<OP, OP<T, typename TL::Head>, typename TL::Tail>> {
+};
+
+template <template <class, class> class OP, class T, Empty TL>
+struct ScanlMaker<OP, T, TL> : public Nil {};
+
+template <template <class, class> class OP, class T, TypeList TL>
+struct FoldlMaker {
+  using Type = typename FoldlMaker<OP, OP<T, typename TL::Head>,
+                                   typename TL::Tail>::Type;
+};
+
+template <template <class, class> class OP, class T, Empty TL>
+struct FoldlMaker<OP, T, TL> {
+  using Type = T;
+};
+
+} // namespace makers
+
 template <TypeList TL>
-using ToTuple = typename ToTupleMake<TL, type_tuples::TTuple<>>::Type;
+using ToTuple = typename makers::ToTupleMake<TL, type_tuples::TTuple<>>::Type;
 
 template <template <class> class P, TypeList TL> struct Filter {
   using Head = typename TL::Head;
@@ -98,30 +121,10 @@ struct Filter<P, TL> : Filter<P, typename TL::Tail> {};
 template <template <class> class P, Empty TL> struct Filter<P, TL> : Nil {};
 
 template <template <class, class> class OP, class T, TypeList TL>
-struct ScanlMaker
-    : public Cons<OP<T, typename TL::Head>,
-                  ScanlMaker<OP, OP<T, typename TL::Head>, typename TL::Tail>> {
-};
-
-template <template <class, class> class OP, class T, Empty TL>
-struct ScanlMaker<OP, T, TL> : public Nil {};
+using Scanl = Cons<T, makers::ScanlMaker<OP, T, TL>>;
 
 template <template <class, class> class OP, class T, TypeList TL>
-using Scanl = Cons<T, ScanlMaker<OP, T, TL>>;
-
-template <template <class, class> class OP, class T, TypeList TL>
-struct FoldlMaker {
-  using Type = typename FoldlMaker<OP, OP<T, typename TL::Head>,
-                                   typename TL::Tail>::Type;
-};
-
-template <template <class, class> class OP, class T, Empty TL>
-struct FoldlMaker<OP, T, TL> {
-  using Type = T;
-};
-
-template <template <class, class> class OP, class T, TypeList TL>
-using Foldl = typename FoldlMaker<OP, T, TL>::Type;
+using Foldl = typename makers::FoldlMaker<OP, T, TL>::Type;
 
 template <TypeList TL>
 struct Tails : public Cons<TL, Tails<typename TL::Tail>> {};
@@ -167,7 +170,7 @@ constexpr int GroupSize() {
     return 0;
   } else if constexpr (EQ<First, typename TL::Head>::Value) {
     using TL::Tail;
-    int curr_res = GroupSize<EQ, typename Tail, First>() + 1; // tl
+    int curr_res = GroupSize<EQ, Tail, First>() + 1; // tl typename
     return curr_res;
   } else {
     return 0;
