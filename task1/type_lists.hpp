@@ -103,7 +103,7 @@ template <class TT> struct CycleDef;
 template <class T, class... Ts>
 struct CycleDef<type_tuples::TTuple<T, Ts...>> { // t_t
   using Head = T;
-  using Tail = CycleDef<type_tuples::TTuple;<Ts..., T>>;
+  using Tail = CycleDef<type_tuples::TTuple<Ts..., T>>;
 };
 
 template <TypeList TL> using Cycle = CycleDef<ToTuple<TL>>; // to
@@ -162,13 +162,13 @@ template <TypeList... TL> struct Zip {
 
 namespace grouper {
 template <template <class, class> class EQ, TypeList TL, class First>
-constexpr int GroupSize() {
+constexpr int GrouperMeasur() {
   if constexpr (std::is_base_of_v<Nil, TL>) {
     return 0;
   } else if constexpr (std::is_base_of_v<Nil, typename TL::Head>) {
     return 0;
   } else if constexpr (EQ<First, typename TL::Head>::Value) {
-    int curr_res = GroupSize<EQ, TL::Tail, First>() + 1; // tl typename
+    int curr_res = GrouperMeasur<EQ, typename TL::Tail, First>() + 1; // tl typename
     return curr_res;
   } else {
     return 0;
@@ -178,9 +178,9 @@ constexpr int GroupSize() {
 
 template <template <typename, typename> typename EQ, TypeList TL>
 struct GroupBy {
-  using Head = Take<grouper::GroupSize<EQ, TL, typename TL::Head>(), TL>;
+  using Head = Take<grouper::GrouperMeasur<EQ, TL, typename TL::Head>(), TL>;
   using Tail =
-      GroupBy<EQ, Drop<grouper::GroupSize<EQ, TL, typename TL::Head>(), TL>>;
+      GroupBy<EQ, Drop<grouper::GrouperMeasur<EQ, TL, typename TL::Head>(), TL>>;
 };
 
 template <template <typename, typename> typename EQ, Empty TL>
