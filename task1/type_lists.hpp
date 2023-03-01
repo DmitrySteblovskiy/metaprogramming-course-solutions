@@ -103,8 +103,7 @@ template <class TT> struct CycleDef;
 template <class T, class... Ts>
 struct CycleDef<type_tuples::TTuple<T, Ts...>> { // t_t
   using Head = T;
-  using type_tuples::TTuple;
-  using Tail = CycleDef<TTuple<Ts..., T>>;
+  using Tail = CycleDef<type_tuples::TTuple;<Ts..., T>>;
 };
 
 template <TypeList TL> using Cycle = CycleDef<ToTuple<TL>>; // to
@@ -169,8 +168,7 @@ constexpr int GroupSize() {
   } else if constexpr (std::is_base_of_v<Nil, typename TL::Head>) {
     return 0;
   } else if constexpr (EQ<First, typename TL::Head>::Value) {
-    using TL::Tail;
-    int curr_res = GroupSize<EQ, Tail, First>() + 1; // tl typename
+    int curr_res = GroupSize<EQ, TL::Tail, First>() + 1; // tl typename
     return curr_res;
   } else {
     return 0;
