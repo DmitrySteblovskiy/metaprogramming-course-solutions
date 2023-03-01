@@ -58,17 +58,6 @@ template <template <class> class F, TypeList TL> struct Map {
 
 template <template <class> class F, Empty TL> struct Map<F, TL> : public Nil {};
 
-template <class TT> struct CycleDef;
-
-template <class T, class... Ts> using type_tuples::TTuple;
-struct CycleDef<TTuple<T, Ts...>> { // t_t
-  using Head = T;
-  using type_tuples::TTuple;
-  using Tail = CycleDef<TTuple<Ts..., T>>;
-};
-
-template <TypeList TL> using Cycle = CycleDef<ToTuple<TL>>; // to
-
 namespace makers {
 template <class TL, class TT> struct ToTupleMake;
 
@@ -108,6 +97,17 @@ struct FoldlMaker<OP, T, TL> {
 
 template <TypeList TL>
 using ToTuple = typename makers::ToTupleMake<TL, type_tuples::TTuple<>>::Type;
+
+template <class TT> struct CycleDef;
+
+template <class T, class... Ts>
+struct CycleDef<type_tuples::TTuple<T, Ts...>> { // t_t
+  using Head = T;
+  using type_tuples::TTuple;
+  using Tail = CycleDef<TTuple<Ts..., T>>;
+};
+
+template <TypeList TL> using Cycle = CycleDef<ToTuple<TL>>; // to
 
 template <template <class> class P, TypeList TL> struct Filter {
   using Head = typename TL::Head;
