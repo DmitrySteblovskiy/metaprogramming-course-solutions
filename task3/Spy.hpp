@@ -10,10 +10,10 @@ private:
   void *logger_ = nullptr;
   size_t counter = 0;
   size_t sz = 0;                                 //
-  void (*logpt)(void *, unsigned int) = nullptr; //
+  void (*logpt)(void *, size_t) = nullptr; //
   void (*destrpt)(void *) = nullptr;
   void *(*coptr)(void *) = nullptr;
-  using BigLogType = void (*)(void *, unsigned int);
+  using BigLogType = void (*)(void *, size_t);
 
 public:
   class LogInvoke {
@@ -145,7 +145,7 @@ public:
             (std::destructible<std::remove_cvref_t<Log_>>)
   void setHelperFunc(Log_ &&logger) {
     auto nextres = std::forward<Log_>(logger);
-    logger_ = new std::remove_cvref_t<Log_>(nextres);
+    logger_ = new std::remove_cvref_t<Log_>(std::forward<Log_>(logger));
 
     logpt = +[](void *self, size_t qnt) {
       std::invoke(*static_cast<std::remove_cvref_t<Log_> *>(self), qnt);
