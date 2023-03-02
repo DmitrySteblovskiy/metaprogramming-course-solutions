@@ -9,7 +9,7 @@ private:
   T value_;
   void *logger_ = nullptr;
   size_t counter = 0;
-  size_t sz = 0;                                 //
+  size_t sz = 0;                           //
   void (*logpt)(void *, size_t) = nullptr; //
   void (*destrpt)(void *) = nullptr;
   void *(*coptr)(void *) = nullptr;
@@ -53,8 +53,7 @@ public:
     requires std::default_initializable<T>
       : value_(T{}) {}
 
-  ~Spy()
-  {
+  ~Spy() {
     if (destrpt != nullptr) {
       destrpt(logger_);
     }
@@ -82,11 +81,12 @@ public:
     }
   }
 
-  void SetSomePt(Spy &&anoth) {
-    logpt = anoth.logpt;
-    destrpt = anoth.destrpt;
-    coptr = anoth.coptr;
-  }
+  /*
+    void SetSomePt(Spy &&anoth) {
+      logpt = anoth.logpt;
+      destrpt = anoth.destrpt;
+      coptr = anoth.coptr;
+    }*/
 
   Spy &operator=(const Spy &anoth)
     requires std::copyable<T>
@@ -105,24 +105,31 @@ public:
       logger_ = nullptr;
     }
 
-    SetSomePt(std::move(anoth));
+    logpt = anoth.logpt;
+    destrpt = anoth.destrpt;
+    coptr = anoth.coptr;
     counter = 0;
 
     return *this;
   }
 
-  Spy &SwapAllTheGuys(Spy &&anoth) {
-    std::swap(logger_, anoth.logger_);
-    std::swap(logpt, anoth.logpt);
-    std::swap(destrpt, anoth.destrpt);
-    std::swap(coptr, anoth.coptr);
-    return anoth;
-  }
+  /*
+    Spy &SwapAllTheGuys(Spy &&anoth) {
+      std::swap(logger_, anoth.logger_);
+      std::swap(logpt, anoth.logpt);
+      std::swap(destrpt, anoth.destrpt);
+      std::swap(coptr, anoth.coptr);
+      return anoth;
+    }*/
 
   Spy(Spy &&anoth)
     requires std::movable<T>
       : value_(std::move(anoth.value_)), counter(0) {
-    anoth = SwapAllTheGuys(std::move(anoth)); // move? fwd?
+    std::swap(logger_, anoth.logger_);
+    std::swap(logpt, anoth.logpt);
+    std::swap(destrpt, anoth.destrpt);
+    std::swap(coptr, anoth.coptr);
+    // anoth = SwapAllTheGuys(std::move(anoth)); // move? fwd?
   }
 
   Spy &operator=(Spy &&anoth)
@@ -133,7 +140,11 @@ public:
     }
     value_ = std::move(anoth.value_);
 
-    anoth = SwapAllTheGuys(std::move(anoth));
+    std::swap(logger_, anoth.logger_);
+    std::swap(logpt, anoth.logpt);
+    std::swap(destrpt, anoth.destrpt);
+    std::swap(coptr, anoth.coptr);
+    // anoth = SwapAllTheGuys(std::move(anoth));
 
     counter = 0;
 
