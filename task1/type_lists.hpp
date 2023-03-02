@@ -160,7 +160,26 @@ template <TypeList... TL> struct Zip {
   using Tail = Zip<typename TL::Tail...>;
 };
 
-namespace grouper {
+
+//
+template <template <class, class> class EQ, TypeList TL, class First>
+struct GrouperMeasur {
+constexpr int GrouperMeasur() {
+  if constexpr (std::is_base_of_v<Nil, TL>) {
+    return 0;
+  } else if constexpr (std::is_base_of_v<Nil, typename TL::Head>) {
+    return 0;
+  } else if constexpr (EQ<First, typename TL::Head>::Value) {
+    int curr_res =
+        GrouperMeasur<EQ, typename TL::Tail, First>() + 1; // tl typename
+    return curr_res;
+  } else {
+    return 0;
+  }
+}
+};
+
+/*
 template <template <class, class> class EQ, TypeList TL, class First>
 constexpr int GrouperMeasur() {
   if constexpr (std::is_base_of_v<Nil, TL>) {
@@ -168,19 +187,20 @@ constexpr int GrouperMeasur() {
   } else if constexpr (std::is_base_of_v<Nil, typename TL::Head>) {
     return 0;
   } else if constexpr (EQ<First, typename TL::Head>::Value) {
-    int curr_res = GrouperMeasur<EQ, typename TL::Tail, First>() + 1; // tl typename
+    int curr_res =
+        GrouperMeasur<EQ, typename TL::Tail, First>() + 1; // tl typename
     return curr_res;
   } else {
     return 0;
   }
-}
-} // namespace grouper
+}*/
 
 template <template <typename, typename> typename EQ, TypeList TL>
 struct GroupBy {
-  using Head = Take<grouper::GrouperMeasur<EQ, TL, typename TL::Head>(), TL>;
+  using Head = Take<GrouperMeasur<EQ, TL, typename TL::Head>(), TL>;
   using Tail =
-      GroupBy<EQ, Drop<grouper::GrouperMeasur<EQ, TL, typename TL::Head>(), TL>>;
+      GroupBy<EQ,
+              Drop<GrouperMeasur<EQ, TL, typename TL::Head>(), TL>>;
 };
 
 template <template <typename, typename> typename EQ, Empty TL>
