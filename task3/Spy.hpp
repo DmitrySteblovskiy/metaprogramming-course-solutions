@@ -15,6 +15,7 @@ private:
   void *(*coptr)(void *) = nullptr;
   using BigLogType = void (*)(void *, unsigned int);
 
+public:
   class LogInvoke {
   private:
     Spy<T> *spy_ptr;
@@ -40,8 +41,7 @@ private:
 
     T *operator->() { return t; }
   };
-
-public:
+  
   explicit Spy(T); // exp?
   explicit Spy(T &&t) : value_(std::forward<T>(t)) {}
 
@@ -51,7 +51,7 @@ public:
 
   Spy()
     requires std::default_initializable<T>
-      : t_(T{}) {}
+      : value_(T{}) {}
 
   ~Spy()
     requires std::destructible<T>
