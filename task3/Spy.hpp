@@ -13,7 +13,7 @@ private:
   void (*logpt)(void *, unsigned int) = nullptr; //
   void (*destrpt)(void *) = nullptr;
   void *(*coptr)(void *) = nullptr;
-  using BigLogType = void (*)(void *, unsigned int)
+  using BigLogType = void (*)(void *, unsigned int);
 
   class LogInvoke {
   private:
