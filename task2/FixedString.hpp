@@ -17,6 +17,6 @@ template <size_t max_length> struct FixedString {
   char res_str[256];
 };
 
-constexpr FixedString<256> operator""_cstr(const char *str, size_t len) {
+constexpr FixedString<256> operator "" _cstr(const char *str, size_t len) {
   return FixedString<256>(str, len);
 }
