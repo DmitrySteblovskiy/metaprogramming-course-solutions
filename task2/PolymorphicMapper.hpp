@@ -6,7 +6,7 @@
 #include <type_traits>
 
 template <class From, auto target> struct Mapping {
-  static constexpr auto Target{target};
+  using Target = decltype(target);
 };
 
 template <class Base, class Target, class... Mappings>
