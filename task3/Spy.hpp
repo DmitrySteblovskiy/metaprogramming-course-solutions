@@ -105,13 +105,13 @@ public:
       logger_ = nullptr;
     }
 
-    SetSomePt(anoth);
+    SetSomePt(std::move(anoth));
     counter = 0;
 
     return *this;
   }
 
-  Spy &&SwapAllTheGuys(Spy &&anoth) {
+  Spy &SwapAllTheGuys(Spy &&anoth) {
     std::swap(logger_, anoth.logger_);
     std::swap(logpt, anoth.logpt);
     std::swap(destrpt, anoth.destrpt);
@@ -122,7 +122,7 @@ public:
   Spy(Spy &&anoth)
     requires std::movable<T>
       : value_(std::move(anoth.value_)), counter(0) {
-    anoth = SwapAllTheGuys(anoth);
+    anoth = SwapAllTheGuys(std::move(anoth));   //move? fwd?
   }
 
   Spy &operator=(Spy &&anoth)
@@ -133,7 +133,7 @@ public:
     }
     value_ = std::move(anoth.value_);
 
-    anoth = SwapAllTheGuys(anoth);
+    anoth = SwapAllTheGuys(std::move(anoth));
 
     counter = 0;
 
@@ -162,7 +162,7 @@ public:
             (std::movable<T>) &&
             (std::move_constructible<std::remove_cvref_t<Log_>>)
   void setLogger(Log_ &&logger) {
-    setHelperFunc(logger);
+    setHelperFunc(std::move(logger));
   }
 
   template <std::invocable<size_t> Log_>
@@ -170,7 +170,7 @@ public:
             (std::destructible<std::remove_cvref_t<Log_>>) &&
             (std::copyable<std::remove_cvref_t<Log_>>)
   void setLogger(Log_ &&logger) {
-    setHelperFunc(logger);
+    setHelperFunc(std::move(logger));
 
     coptr = +[](void *self) -> void * {
       return new std::remove_cvref_t<Log_>(
