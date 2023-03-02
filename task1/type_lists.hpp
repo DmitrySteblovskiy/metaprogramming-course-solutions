@@ -179,22 +179,6 @@ constexpr int GrouperMeasur() {
 }
 };
 
-/*
-template <template <class, class> class EQ, TypeList TL, class First>
-constexpr int GrouperMeasur() {
-  if constexpr (std::is_base_of_v<Nil, TL>) {
-    return 0;
-  } else if constexpr (std::is_base_of_v<Nil, typename TL::Head>) {
-    return 0;
-  } else if constexpr (EQ<First, typename TL::Head>::Value) {
-    int curr_res =
-        GrouperMeasur<EQ, typename TL::Tail, First>() + 1; // tl typename
-    return curr_res;
-  } else {
-    return 0;
-  }
-}*/
-
 template <template <typename, typename> typename EQ, TypeList TL>
 struct GroupBy {
   using Head = Take<GrouperMeasur<EQ, TL, typename TL::Head>(), TL>;
