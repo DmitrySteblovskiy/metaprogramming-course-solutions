@@ -41,7 +41,7 @@ public:
 
     T *operator->() { return t; }
   };
-  
+
   explicit Spy(T); // exp?
   explicit Spy(T &&t) : value_(std::forward<T>(t)) {}
 
@@ -54,7 +54,6 @@ public:
       : value_(T{}) {}
 
   ~Spy()
-    requires std::destructible<T>
   {
     if (destrpt != nullptr) {
       destrpt(logger_);
