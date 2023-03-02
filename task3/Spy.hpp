@@ -1,4 +1,5 @@
 #pragma once
+
 #include <concepts>
 #include <functional>
 #include <utility>
@@ -12,6 +13,7 @@ private:
   void (*logpt)(void *, unsigned int) = nullptr; //
   void (*destrpt)(void *) = nullptr;
   void *(*coptr)(void *) = nullptr;
+  using BigLogType = void (*)(void *, unsigned int)
 
   class LogInvoke {
   private:
@@ -19,13 +21,12 @@ private:
     size_t i = 0;
     T *t;
     void *logger;
-    void (*)(void *, unsigned int) log;
+    BigLogType log;
     size_t *curr;
 
   public:
     // T *operator->() { return &spy_ptr->value_; }
-    LogInvoke(T *t, void *logger, void (*)(void *, unsigned int) log,
-              size_t *counter)
+    LogInvoke(T *t, void *logger, BigLogType log, size_t *counter)
         : t(t), logger(logger), log(log), curr(counter) {}
 
     ~LogInvoke() {
@@ -122,7 +123,7 @@ public:
   Spy(Spy &&anoth)
     requires std::movable<T>
       : value_(std::move(anoth.value_)), counter(0) {
-    anoth = SwapAllTheGuys(std::move(anoth));   //move? fwd?
+    anoth = SwapAllTheGuys(std::move(anoth)); // move? fwd?
   }
 
   Spy &operator=(Spy &&anoth)
