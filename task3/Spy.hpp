@@ -120,23 +120,16 @@ public:
     return *this;
   }
 
-  /*
-    template <std::invocable<size_t> Logger> void setHelperFunc(Logger &&logger)
-    {
-      // auto nextres = std::forward<Logger>(logger);
-      if (logger_ != nullptr) {
-        pointers_.destrpt(logger_);
-      }
-      logger_ = new std::remove_cvref_t<Logger>(std::forward<Logger>(logger));
+  template <std::invocable<size_t> Logger> void setHelperFunc(Logger &&logger) {
+    // auto nextres = std::forward<Logger>(logger);
+    pointers_.logpt = +[](void *logger, size_t n) {
+      std::invoke(*static_cast<std::remove_cvref_t<Logger> *>(logger), n);
+    };
 
-      pointers_.logpt = +[](void *logger, size_t n) {
-        std::invoke(*static_cast<std::remove_cvref_t<Logger> *>(logger), n);
-      };
-
-      pointers_.destrpt = +[](void *logger) {
-        delete static_cast<std::remove_cvref_t<Logger> *>(logger);
-      };
-    }*/
+    pointers_.destrpt = +[](void *logger) {
+      delete static_cast<std::remove_cvref_t<Logger> *>(logger);
+    };
+  }
 
   template <std::invocable<size_t> Logger>
     requires std::copyable<T> && std::copyable<std::remove_cvref_t<Logger>>
@@ -147,13 +140,7 @@ public:
     }
     logger_ = new std::remove_cvref_t<Logger>(std::forward<Logger>(logger));
 
-    pointers_.logpt = +[](void *logger, size_t n) {
-      std::invoke(*static_cast<std::remove_cvref_t<Logger> *>(logger), n);
-    };
-
-    pointers_.destrpt = +[](void *logger) {
-      delete static_cast<std::remove_cvref_t<Logger> *>(logger);
-    };
+    setHelperFunc(logger);
 
     pointers_.coptr = +[](void *logger) -> void * {
       return new std::remove_cvref_t<Logger>(
@@ -171,12 +158,6 @@ public:
     }
     logger_ = new std::remove_cvref_t<Logger>(std::forward<Logger>(logger));
 
-    pointers_.logpt = +[](void *logger, size_t n) {
-      std::invoke(*static_cast<std::remove_cvref_t<Logger> *>(logger), n);
-    };
-
-    pointers_.destrpt = +[](void *logger) {
-      delete static_cast<std::remove_cvref_t<Logger> *>(logger);
-    };
+    setHelperFunc(logger);
   }
 };
