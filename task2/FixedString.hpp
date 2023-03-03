@@ -10,7 +10,7 @@ template <size_t max_length> struct FixedString {
   // std::string res_str(256, 0);
   char res_str[256]{0};
 
-  void Filler(char *res_str) { std::fill(res_str, res_str + 256, 0); }
+  constexpr void Filler(char *res_str) { std::fill(res_str, res_str + 256, 0); }
 
   constexpr FixedString(const char *string, size_t length) : len(length) {
     Filler(res_str);
