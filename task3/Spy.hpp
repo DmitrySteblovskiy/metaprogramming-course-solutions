@@ -8,26 +8,26 @@ template <class T> class Spy {
 private:
   T value_;
   void *logger_ = nullptr;
-  unsigned int counter = 0;
-  unsigned int sz = 0;                           //
-  void (*logpt)(void *, unsigned int) = nullptr; //
+  size_t counter = 0;
+  size_t sz = 0;                           //
+  void (*logpt)(void *, size_t) = nullptr; //
   void (*destrpt)(void *) = nullptr;
   void *(*coptr)(void *) = nullptr;
-  using BigLogType = void (*)(void *, unsigned int);
+  using BigLogType = void (*)(void *, size_t);
 
 public:
   class LogInvoke {
   private:
     Spy<T> *spy_ptr;
-    unsigned int i = 0;
+    size_t i = 0;
     T *t;
     void *logger;
     BigLogType log;
-    unsigned int *curr;
+    size_t *curr;
 
   public:
     // T *operator->() { return &spy_ptr->value_; }
-    LogInvoke(T *t, void *logger, BigLogType log, unsigned int *counter)
+    LogInvoke(T *t, void *logger, BigLogType log, size_t *counter)
         : t(t), logger(logger), log(log), curr(counter) {}
 
     ~LogInvoke() {
@@ -151,14 +151,14 @@ public:
     return *this;
   }
 
-  template <std::invocable<unsigned int> Log_>
+  template <std::invocable<size_t> Log_>
     requires(std::destructible<T>) && // unnecessary?
             (std::destructible<std::remove_cvref_t<Log_>>)
   void setHelperFunc(Log_ &&logger) {
     // auto nextres = std::forward<Log_>(logger);
     logger_ = new std::remove_cvref_t<Log_>(std::forward<Log_>(logger));
 
-    logpt = +[](void *self, unsigned int qnt) {
+    logpt = +[](void *self, size_t qnt) {
       std::invoke(*static_cast<std::remove_cvref_t<Log_> *>(self), qnt);
     };
 
@@ -167,37 +167,21 @@ public:
     };
   }
 
-  template <std::invocable<unsigned int> Log_> // invoc
+  template <std::invocable<size_t> Log_> // invoc
     requires(!std::copyable<T>) && (std::destructible<T>) &&
             (std::destructible<std::remove_cvref_t<Log_>>) &&
             (std::movable<T>) &&
             (std::move_constructible<std::remove_cvref_t<Log_>>)
   void setLogger(Log_ &&logger) {
-    logger_ = new std::remove_cvref_t<Log_>(std::forward<Log_>(logger));
-
-    logpt = +[](void *self, unsigned int qnt) {
-      std::invoke(*static_cast<std::remove_cvref_t<Log_> *>(self), qnt);
-    };
-
-    destrpt = +[](void *self) {
-      delete static_cast<std::remove_cvref_t<Log_> *>(self);
-    };
+    setHelperFunc(std::move(logger));
   }
 
-  template <std::invocable<unsigned int> Log_>
+  template <std::invocable<size_t> Log_>
     requires(std::copyable<T>) && (std::destructible<T>) &&
             (std::destructible<std::remove_cvref_t<Log_>>) &&
             (std::copyable<std::remove_cvref_t<Log_>>)
   void setLogger(Log_ &&logger) {
-    logger_ = new std::remove_cvref_t<Log_>(std::forward<Log_>(logger));
-
-    logpt = +[](void *self, unsigned int qnt) {
-      std::invoke(*static_cast<std::remove_cvref_t<Log_> *>(self), qnt);
-    };
-
-    destrpt = +[](void *self) {
-      delete static_cast<std::remove_cvref_t<Log_> *>(self);
-    };
+    setHelperFunc(std::move(logger));
 
     coptr = +[](void *self) -> void * {
       return new std::remove_cvref_t<Log_>(
