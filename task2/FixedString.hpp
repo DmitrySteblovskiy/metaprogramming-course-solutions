@@ -7,7 +7,8 @@
 template <size_t max_length> struct FixedString {
   size_t len;
   //const char res_str[256];
-  std::string res_str(256, 0);
+  //std::string res_str(256, 0);
+  const char res_str[max_length]{0};
 
   constexpr FixedString(const char *string, size_t length) : len(length) {
     for (size_t i = 0; i < len; ++i)
