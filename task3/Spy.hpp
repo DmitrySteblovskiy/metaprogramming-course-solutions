@@ -4,64 +4,88 @@
 #include <functional>
 #include <utility>
 
+class PtrsEnum {
+public:
+  void (*logpt)(void *, size_t) = nullptr;
+  void (*destrpt)(void *) = nullptr;
+  void *(*coptr)(void *) = nullptr;
+};
+
 template <class T> class Spy {
 private:
   T value_;
   void *logger_ = nullptr;
-  size_t counter = 0;
-  size_t sz = 0;                           //
-  void (*logpt)(void *, size_t) = nullptr; //
-  void (*destrpt)(void *) = nullptr;
-  void *(*coptr)(void *) = nullptr;
+  PtrsEnum pointers_;
+  size_t counter_ = 0;
+  size_t sz_ = 0;
   using BigLogType = void (*)(void *, size_t);
 
 public:
-  class LogInvoke {
-  private:
-    Spy<T> *spy_ptr;
-    size_t i = 0;
-    T *t;
-    void *logger;
-    BigLogType log;
-    size_t *curr;
-
-  public:
-    // T *operator->() { return &spy_ptr->value_; }
-    LogInvoke(T *t, void *logger, BigLogType log, size_t *counter)
-        : t(t), logger(logger), log(log), curr(counter) {}
-
-    ~LogInvoke() {
-      if (*curr > 0) {
-        if (logger != nullptr) {
-          log(logger, *curr);
-        }
-        *curr = 0;
-      }
-    }
-
-    T *operator->() { return t; }
-  };
-
-  // explicit Spy(T); // exp?
-  explicit Spy(T &&t) : value_(std::forward<T>(t)) {}
+  explicit Spy(T &&value) : value_(std::forward<T>(value)) {}
 
   T &operator*() { return value_; }
 
   const T &operator*() const { return value_; }
+
+  struct LogInvoke {
+  private:
+    Spy<T> *spy_ptr;
+
+  public:
+    LogInvoke(Spy<T> *ptr) : spy_ptr(ptr) {}
+
+    ~LogInvoke() {
+      if (spy_ptr->counter_ > 0) {
+        void *curr = spy_ptr->logger_;
+        if (curr != nullptr)
+          spy_ptr->pointers_.logpt(curr, spy_ptr->counter_);
+        spy_ptr->counter_ = 0;
+      }
+    }
+
+    T *operator->() { return &spy_ptr->value_; }
+  };
+
+  LogInvoke operator->() {
+    ++counter_;
+    return LogInvoke(this);
+  }
 
   Spy()
     requires std::default_initializable<T>
       : value_(T{}) {}
 
   ~Spy() {
-    if (destrpt != nullptr) {
-      destrpt(logger_);
-    }
+    if (logger_ != nullptr)
+      pointers_.destrpt(logger_);
   }
 
-  LogInvoke operator->() {
-    counter++;
-    return LogInvoke{&value_, logger_, logpt, &counter};
+  void logExchange(const Spy &anoth) {
+    if (logger_ != nullptr) {
+      pointers_.destrpt(logger_);
+      logger_ = nullptr;
+    }
+    if (anoth.logger_ != nullptr && anoth.pointers_.coptr != nullptr) {
+      logger_ = anoth.pointers_.coptr(anoth.logger_);
+    }
+    pointers_ = anoth.pointers_;
+  }
+
+  Spy(const Spy &anoth)
+    requires std::copyable<T>
+      : value_(anoth.value_), counter_(0) {
+    logExchange(anoth);
+  }
+
+  void logSwapper(Spy &&anoth) {
+    std::swap(logger_, anoth.logger_);
+    std::swap(pointers_, anoth.pointers_);
+  }
+
+  Spy(Spy &&anoth)
+    requires std::movable<T>
+      : value_(std::move(anoth.value_)) {
+    logSwapper(std::forward<Spy>(anoth));
   }
 
   bool operator==(const Spy &anoth) const
@@ -70,122 +94,63 @@ public:
     return value_ == anoth.value_;
   }
 
-  void setLogger();
-
-  Spy(const Spy &anoth)
-    requires std::copyable<T>
-      : value_(anoth.value_), counter(0), logpt(anoth.logpt),
-        destrpt(anoth.destrpt), coptr(anoth.coptr) {
-    if (anoth.logger_ != nullptr) {
-      logger_ = anoth.coptr(anoth.logger_);
-    }
-  }
-
-  /*
-    void SetSomePt(Spy &&anoth) {
-      logpt = anoth.logpt;
-      destrpt = anoth.destrpt;
-      coptr = anoth.coptr;
-    }*/
-
   Spy &operator=(const Spy &anoth)
     requires std::copyable<T>
   {
-    if (this == &anoth) {
+    if (this == &anoth)
       return *this;
-    }
-    if (destrpt != nullptr) {
-      destrpt(logger_);
-    }
 
     value_ = anoth.value_;
-    if (anoth.logger_ != nullptr) {
-      logger_ = anoth.coptr(anoth.logger_);
-    } else {
-      logger_ = nullptr;
-    }
-
-    logpt = anoth.logpt;
-    destrpt = anoth.destrpt;
-    coptr = anoth.coptr;
-    counter = 0;
+    logExchange(anoth);
+    counter_ = 0;
 
     return *this;
-  }
-
-  /*
-    Spy &SwapAllTheGuys(Spy &&anoth) {
-      std::swap(logger_, anoth.logger_);
-      std::swap(logpt, anoth.logpt);
-      std::swap(destrpt, anoth.destrpt);
-      std::swap(coptr, anoth.coptr);
-      return anoth;
-    }*/
-
-  Spy(Spy &&anoth)
-    requires std::movable<T>
-      : value_(std::move(anoth.value_)), counter(0) {
-    std::swap(logger_, anoth.logger_);
-    std::swap(logpt, anoth.logpt);
-    std::swap(destrpt, anoth.destrpt);
-    std::swap(coptr, anoth.coptr);
-    // anoth = SwapAllTheGuys(std::move(anoth)); // move? fwd?
   }
 
   Spy &operator=(Spy &&anoth)
     requires std::movable<T>
   {
-    if (this == &anoth) {
+    if (this == &anoth)
       return *this;
-    }
+
     value_ = std::move(anoth.value_);
-
-    std::swap(logger_, anoth.logger_);
-    std::swap(logpt, anoth.logpt);
-    std::swap(destrpt, anoth.destrpt);
-    std::swap(coptr, anoth.coptr);
-    // anoth = SwapAllTheGuys(std::move(anoth));
-
-    counter = 0;
+    logSwapper(std::forward<Spy>(anoth));
+    counter_ = 0;
 
     return *this;
   }
 
-  template <std::invocable<size_t> Log_>
-    requires(std::destructible<T>) && // unnecessary?
-            (std::destructible<std::remove_cvref_t<Log_>>)
-  void setHelperFunc(Log_ &&logger) {
-    // auto nextres = std::forward<Log_>(logger);
-    logger_ = new std::remove_cvref_t<Log_>(std::forward<Log_>(logger));
+  template <std::invocable<size_t> Logger> void setHelperFunc(Logger &&logger) {
+    // auto nextres = std::forward<Logger>(logger);
+    if (logger_ != nullptr) {
+      pointers_.destrpt(logger_);
+    }
+    logger_ = new std::remove_cvref_t<Logger>(std::forward<Logger>(logger));
 
-    logpt = +[](void *self, size_t qnt) {
-      std::invoke(*static_cast<std::remove_cvref_t<Log_> *>(self), qnt);
+    pointers_.logpt = +[](void *logger, size_t n) {
+      std::invoke(*static_cast<std::remove_cvref_t<Logger> *>(logger), n);
     };
 
-    destrpt = +[](void *self) {
-      delete static_cast<std::remove_cvref_t<Log_> *>(self);
+    pointers_.destrpt = +[](void *logger) {
+      delete static_cast<std::remove_cvref_t<Logger> *>(logger);
     };
   }
 
-  template <std::invocable<size_t> Log_> // invoc
-    requires(!std::copyable<T>) && (std::destructible<T>) &&
-            (std::destructible<std::remove_cvref_t<Log_>>) &&
-            (std::movable<T>) &&
-            (std::move_constructible<std::remove_cvref_t<Log_>>)
-  void setLogger(Log_ &&logger) {
-    setHelperFunc(std::move(logger));
+  template <std::invocable<size_t> Logger>
+    requires std::copyable<T> && std::copyable<std::remove_cvref_t<Logger>>
+  void setLogger(Logger &&logger) {
+    setHelperFunc(logger);
+
+    pointers_.coptr = +[](void *logger) -> void * {
+      return new std::remove_cvref_t<Logger>(
+          *static_cast<std::remove_cvref_t<Logger> *>(logger));
+    };
   }
 
-  template <std::invocable<size_t> Log_>
-    requires(std::copyable<T>) && (std::destructible<T>) &&
-            (std::destructible<std::remove_cvref_t<Log_>>) &&
-            (std::copyable<std::remove_cvref_t<Log_>>)
-  void setLogger(Log_ &&logger) {
-    setHelperFunc(std::move(logger));
-
-    coptr = +[](void *self) -> void * {
-      return new std::remove_cvref_t<Log_>(
-          *static_cast<std::remove_cvref_t<Log_> *>(self));
-    };
+  template <std::invocable<size_t> Logger>
+    requires std::movable<T> && (!std::copyable<T>) &&
+             std::move_constructible<std::remove_cvref_t<Logger>>
+  void setLogger(Logger &&logger) {
+    setHelperFunc(logger);
   }
 };
