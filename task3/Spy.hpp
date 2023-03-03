@@ -73,7 +73,7 @@ public:
   void setLogger();
 
   Spy(const Spy &anoth)
-    requires std::std::copy_constructible<T>
+    requires std::copy_constructible<T>
       : value_(anoth.value_), counter(0), logpt(anoth.logpt), destrpt(anoth.destrpt),
         coptr(anoth.coptr) {
     if (anoth.logger_ != nullptr) {
@@ -89,7 +89,7 @@ public:
     }*/
 
   Spy &operator=(const Spy &anoth)
-    requires std::std::copy_constructible<T>
+    requires std::copy_constructible<T>
   {
     if (this == &anoth) {
       return *this;
@@ -168,7 +168,7 @@ public:
   }
 
   template <std::invocable<size_t> Log_> // invoc
-    requires(!std::std::copy_constructible<T>) && (std::destructible<T>) &&
+    requires(!std::copy_constructible<T>) && (std::destructible<T>) &&
             (std::destructible<std::remove_cvref_t<Log_>>) &&
             (std::movable<T>) &&
             (std::move_constructible<std::remove_cvref_t<Log_>>)
@@ -177,9 +177,9 @@ public:
   }
 
   template <std::invocable<size_t> Log_>
-    requires(std::std::copy_constructible<T>) && (std::destructible<T>) &&
+    requires(std::copy_constructible<T>) && (std::destructible<T>) &&
             (std::destructible<std::remove_cvref_t<Log_>>) &&
-            (std::std::copy_constructible<std::remove_cvref_t<Log_>>)
+            (std::copy_constructible<std::remove_cvref_t<Log_>>)
   void setLogger(Log_ &&logger) {
     setHelperFunc(std::move(logger));
 
