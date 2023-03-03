@@ -1,11 +1,13 @@
 #pragma once
 
+#include <algorithm>
 #include <string>
 #include <string_view>
 
 template <size_t max_length> struct FixedString {
   size_t len;
-  const char res_str[256];
+  //const char res_str[256];
+  std::string res_str(256, 0);
 
   constexpr FixedString(const char *string, size_t length) : len(length) {
     for (size_t i = 0; i < len; ++i)
