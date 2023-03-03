@@ -42,7 +42,7 @@ public:
     T *operator->() { return t; }
   };
 
-  explicit Spy(T); // exp?
+  //explicit Spy(T); // exp?
   explicit Spy(T &&t) : value_(std::forward<T>(t)) {}
 
   T &operator*() { return value_; }
@@ -60,7 +60,7 @@ public:
   }
 
   LogInvoke operator->() {
-    ++counter;
+    counter++;
     return LogInvoke{&value_, logger_, logpt, &counter};
   }
 
