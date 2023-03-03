@@ -74,8 +74,8 @@ public:
 
   Spy(const Spy &anoth)
     requires std::copyable<T>
-      : value_(anoth.value_), logpt(anoth.logpt), destrpt(anoth.destrpt),
-        coptr(anoth.coptr), counter(0) {
+      : value_(anoth.value_), counter(0), logpt(anoth.logpt), destrpt(anoth.destrpt),
+        coptr(anoth.coptr) {
     if (anoth.logger_ != nullptr) {
       logger_ = anoth.coptr(anoth.logger_);
     }
@@ -155,7 +155,7 @@ public:
     requires(std::destructible<T>) && // unnecessary?
             (std::destructible<std::remove_cvref_t<Log_>>)
   void setHelperFunc(Log_ &&logger) {
-    auto nextres = std::forward<Log_>(logger);
+    //auto nextres = std::forward<Log_>(logger);
     logger_ = new std::remove_cvref_t<Log_>(std::forward<Log_>(logger));
 
     logpt = +[](void *self, size_t qnt) {
